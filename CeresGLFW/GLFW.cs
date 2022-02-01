@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -6,6 +7,8 @@ namespace CeresGLFW
 {
     public static class GLFW
     {
+        public const int DONT_CARE = -1;
+        
         internal const string DllName = "glfw3";
 
         [DllImport(DllName)]
@@ -44,16 +47,31 @@ namespace CeresGLFW
         [DllImport(DllName)]
         private static extern void glfwSetTime(double time);
 
-        public const int DONT_CARE = -1;
+        [DllImport(DllName)]
+        private static extern void glfwSetMonitorCallback(MonitorFunction callback);
+
+        [DllImport(DllName)]
+        private static extern IntPtr glfwGetPrimaryMonitor();
+        
+        [DllImport(DllName)]
+        private static extern IntPtr glfwGetMonitors(ref int count);
+        
+        private static readonly Dictionary<IntPtr, GLFWMonitor> _validMonitors = new();
+        
+        private delegate void MonitorFunction(IntPtr monitor, int eventValue);
         
         public static Thread? MainThread { get; private set; }
 
         public static void Init()
         {
+            if (MainThread != null) {
+                throw new InvalidOperationException("GLFW already initialized.");
+            }
             if (glfwInit() == 0) {
-                throw new InvalidOperationException("Failed to initialize GLFW");
+                throw new InvalidOperationException("Failed to initialize GLFW.");
             }
             MainThread = Thread.CurrentThread;
+            glfwSetMonitorCallback(HandleMonitorChanged);
         }
 
         public static void MakeContextCurrent(GLFWWindow? window)
@@ -155,6 +173,52 @@ namespace CeresGLFW
         public static void SetTime(double time)
         {
             glfwSetTime(time);
+        }
+
+        public static GLFWMonitor GetPrimaryMonitor()
+        {
+            return MakeMonitor(glfwGetPrimaryMonitor());
+        }
+
+        public static GLFWMonitor[] GetMonitors()
+        {
+            int count = 0;
+            GLFWMonitor[] monitors = new GLFWMonitor[count];
+            IntPtr array = glfwGetMonitors(ref count);
+
+            lock (_validMonitors) {
+                unsafe {
+                    IntPtr* monitorHandles = (IntPtr*)array.ToPointer();
+                    for (int i = 0; i < count; ++i) {
+                        monitors[i] = MakeMonitor(*monitorHandles++);
+                    }
+                }    
+            }
+            
+            return monitors;
+        }
+
+        private static GLFWMonitor MakeMonitor(IntPtr handle)
+        {
+            lock (_validMonitors) {
+                GLFWMonitor? monitor;
+                if (!_validMonitors.TryGetValue(handle, out monitor)) {
+                    monitor = new GLFWMonitor(handle);
+                    _validMonitors.Add(handle, monitor);
+                    return monitor;
+                }
+                return monitor;
+            }
+        }
+        
+        private static void HandleMonitorChanged(IntPtr monitorHandle, int eventValue)
+        {
+            lock (_validMonitors) {
+                foreach (GLFWMonitor monitor in _validMonitors.Values) {
+                    monitor.Invalidate();
+                }
+                _validMonitors.Clear();
+            }
         }
 
     }

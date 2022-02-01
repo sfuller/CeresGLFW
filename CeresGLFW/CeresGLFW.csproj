@@ -5,6 +5,7 @@
         <Nullable>enable</Nullable>
         <PackageVersion>0.1.0</PackageVersion>
         <RepositoryUrl>https://github.com/sfuller/CeresGLFW</RepositoryUrl>
+        <LangVersion>9</LangVersion>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
