@@ -100,6 +100,9 @@ namespace CeresGLFW
         [DllImport(GLFW.DllName)]
         private static extern void glfwSetKeyCallback(IntPtr window, KeyCallback callback);
 
+        [DllImport(GLFW.DllName)]
+        private static extern IntPtr glfwGetCocoaWindow(IntPtr window);
+
         private IntPtr _window;
 
         internal IntPtr Handle {
@@ -288,6 +291,11 @@ namespace CeresGLFW
         {
             width = height = 0;
             glfwGetFramebufferSize(_window, ref width, ref height);
+        }
+
+        public IntPtr GetCocoaWindow()
+        {
+            return glfwGetCocoaWindow(_window);
         }
 
         private void ReleaseUnmanagedResources()
