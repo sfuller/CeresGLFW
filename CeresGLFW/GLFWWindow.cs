@@ -23,6 +23,9 @@ namespace CeresGLFW
         private static extern int glfwWindowShouldClose(IntPtr window);
         
         [DllImport(GLFW.DllName)]
+        private static extern void glfwSetWindowShouldClose(IntPtr window, int value);
+        
+        [DllImport(GLFW.DllName)]
         private static extern void glfwSwapBuffers(IntPtr window);
 
         [DllImport(GLFW.DllName)]
@@ -213,7 +216,10 @@ namespace CeresGLFW
             glfwSetKeyCallback(_window, _keyCallback);
         }
 
-        public bool ShouldClose => glfwWindowShouldClose(Handle) != 0;
+        public bool ShouldClose {
+            get => glfwWindowShouldClose(Handle) != 0;
+            set => glfwSetWindowShouldClose(Handle, value ? 1 : 0);
+        }
 
         public event Action<int, int>? FramebufferResized;
         public event Action? RefreshRequested;
