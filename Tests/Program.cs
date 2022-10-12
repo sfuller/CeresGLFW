@@ -20,6 +20,14 @@ while (!window.ShouldClose) {
     double time = GLFW.GetTime();
     double delta = time - previous;
     Console.WriteLine($"{GLFW.GetTime()} - {time - previous} - {1.0 / delta}");
+
+    if (window.GetKey(Key.C)) {
+        window.SetClipboardString("Fuzzy pickles!");
+    }
+    if (window.GetKey(Key.V)) {
+        Console.WriteLine($"Clipboard: {window.GetClipboardString()}");
+    }
+    
     previous = time;
     window.SwapBuffers();
     GLFW.PollEvents();

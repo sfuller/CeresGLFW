@@ -106,6 +106,12 @@ namespace CeresGLFW
         [DllImport(GLFW.DllName)]
         private static extern IntPtr glfwGetCocoaWindow(IntPtr window);
 
+        [DllImport(GLFW.DllName)]
+        private static extern IntPtr glfwGetClipboardString(IntPtr window);
+
+        [DllImport(GLFW.DllName)]
+        private static extern void glfwSetClipboardString(IntPtr window, IntPtr str);
+
         private IntPtr _window;
 
         internal IntPtr Handle {
@@ -302,6 +308,31 @@ namespace CeresGLFW
         public IntPtr GetCocoaWindow()
         {
             return glfwGetCocoaWindow(_window);
+        }
+
+        public string? GetClipboardString()
+        {
+            return Marshal.PtrToStringAnsi(glfwGetClipboardString(_window));
+        }
+
+        public unsafe void* GetClipboardStringRaw()
+        {
+            return (void*)glfwGetClipboardString(_window);
+        }
+
+        public void SetClipboardString(string str)
+        {
+            IntPtr strPtr = Marshal.StringToHGlobalAnsi(str);
+            try {
+                glfwSetClipboardString(_window, strPtr);
+            } finally {
+                Marshal.FreeHGlobal(strPtr);
+            }
+        }
+
+        public unsafe void SetClipboardStringRaw(void* str)
+        {
+            glfwSetClipboardString(_window, new IntPtr(str));
         }
 
         private void ReleaseUnmanagedResources()
