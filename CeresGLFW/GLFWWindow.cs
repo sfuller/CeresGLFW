@@ -230,10 +230,10 @@ namespace CeresGLFW
         public event Action<int, int>? FramebufferResized;
         public event Action? RefreshRequested;
         public event Action<double, double>? CursorPositionChanged;
-        public event Action<int, InputAction, int>? MouseButtonChanged;
+        public event Action<int, InputAction, Mod>? MouseButtonChanged;
         public event Action<double, double>? ScrollChanged;
         public event Action<uint>? CharacterInput;
-        public event Action<Key, int, InputAction, int>? KeyChanged;
+        public event Action<Key, int, InputAction, Mod>? KeyChanged;
         public event Action? Closed;
 
         public void SwapBuffers()
@@ -387,7 +387,7 @@ namespace CeresGLFW
 
         private static void HandleMouseButtonChanged(IntPtr windowPtr, int button, int action, int mods)
         {
-            GetWindowFromPtr(windowPtr).MouseButtonChanged?.Invoke(button, (InputAction)action, mods);
+            GetWindowFromPtr(windowPtr).MouseButtonChanged?.Invoke(button, (InputAction)action, (Mod)mods);
         }
 
         private static void HandleScrollChanged(IntPtr windowPtr, double x, double y)
@@ -402,7 +402,7 @@ namespace CeresGLFW
 
         private static void HandleKeyChanged(IntPtr windowPtr, int key, int scancode, int action, int mods)
         {
-            GetWindowFromPtr(windowPtr).KeyChanged?.Invoke((Key)key, scancode, (InputAction)action, mods);
+            GetWindowFromPtr(windowPtr).KeyChanged?.Invoke((Key)key, scancode, (InputAction)action, (Mod)mods);
         }
 
         private static void HandleClosed(IntPtr windowPtr)

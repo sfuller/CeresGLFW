@@ -55,6 +55,9 @@ namespace CeresGLFW
         
         [DllImport(DllName)]
         private static extern IntPtr glfwGetMonitors(ref int count);
+
+        [DllImport(DllName)]
+        private static extern IntPtr glfwGetKeyName(int key, int scancode);
         
         private static readonly Dictionary<IntPtr, GLFWMonitor> _validMonitors = new();
         
@@ -219,6 +222,11 @@ namespace CeresGLFW
                 }
                 _validMonitors.Clear();
             }
+        }
+
+        public static string? GetKeyName(Key key, int scancode)
+        {
+            return Marshal.PtrToStringUTF8(glfwGetKeyName((int)key, scancode));
         }
 
     }
