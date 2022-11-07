@@ -27,6 +27,9 @@ namespace CeresGLFW
         private static extern void glfwWaitEvents();
 
         [DllImport(DllName)]
+        private static extern void glfwWaitEventsTimeout(double timeout);
+
+        [DllImport(DllName)]
         private static extern void glfwPostEmptyEvent();
 
         [DllImport(DllName)]
@@ -119,6 +122,11 @@ namespace CeresGLFW
         public static void WaitEvents()
         {
             glfwWaitEvents();
+        }
+
+        public static void WaitEventsTimeout(double timeout)
+        {
+            glfwWaitEventsTimeout(timeout);
         }
 
         public static void PostEmptyEvent()
