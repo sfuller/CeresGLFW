@@ -1,12 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netstandard2.1</TargetFramework>
+        <TargetFramework>net5.0</TargetFramework>
         <Nullable>enable</Nullable>
         <PackageVersion>0.1.2</PackageVersion>
         <RepositoryUrl>https://github.com/sfuller/CeresGLFW</RepositoryUrl>
         <LangVersion>9</LangVersion>
     </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="CeresGLFW-native" Version="3.3.8" />
+    </ItemGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
       <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
