@@ -69,7 +69,9 @@ namespace CeresGLFW
 
         [DllImport(GLFW.DllName)]
         private static extern void glfwGetFramebufferSize(IntPtr window, ref int width, ref int height);
-        
+
+        private delegate void SizeCallback(IntPtr window, int width, int height);
+        private delegate void PosCallback(IntPtr window, int xpos, int ypos);
         private delegate void FramebufferSizeCallback(IntPtr window, int width, int height);
         private delegate void WindowRefreshCallback(IntPtr window);
         private delegate void CursorPositionCallback(IntPtr window, double x, double y);
@@ -78,7 +80,14 @@ namespace CeresGLFW
         private delegate void CharCallback(IntPtr window, uint character);
         private delegate void KeyCallback(IntPtr window, int key, int scancode, int action, int mods);
         private delegate void CloseCallback(IntPtr window);
+        private delegate void MaximizedCallback(IntPtr window, int maximized);
 
+        [DllImport(GLFW.DllName)]
+        private static extern void glfwSetWindowSizeCallback(IntPtr window, SizeCallback callback);
+
+        [DllImport(GLFW.DllName)]
+        private static extern void glfwSetWindowPosCallback(IntPtr window, PosCallback callback);
+        
         [DllImport(GLFW.DllName)]
         private static extern void glfwSetFramebufferSizeCallback(IntPtr window, FramebufferSizeCallback callback);
 
@@ -104,6 +113,9 @@ namespace CeresGLFW
         private static extern void glfwSetKeyCallback(IntPtr window, KeyCallback callback);
 
         [DllImport(GLFW.DllName)]
+        private static extern void glfwSetWindowMaximizeCallback(IntPtr window, MaximizedCallback callback);
+
+        [DllImport(GLFW.DllName)]
         private static extern IntPtr glfwGetCocoaWindow(IntPtr window);
 
         [DllImport(GLFW.DllName)]
@@ -123,6 +135,9 @@ namespace CeresGLFW
 
         // These callbacks must be stored at a field level to avoid GC while they are in use by GLFW.
         // ReSharper disable PrivateFieldCanBeConvertedToLocalVariable
+        private readonly SizeCallback _sizeCallback;
+        private readonly PosCallback _posCallback;
+        private readonly MaximizedCallback _maximizedCallback;
         private readonly FramebufferSizeCallback _framebufferSizeCallback;
         private readonly WindowRefreshCallback _windowRefreshCallback;
         private readonly CursorPositionCallback _cursorPositionCallback;
@@ -203,6 +218,8 @@ namespace CeresGLFW
             GCHandle handle = GCHandle.Alloc(this, GCHandleType.Weak);
             glfwSetWindowUserPointer(_window, GCHandle.ToIntPtr(handle));
 
+            _sizeCallback = HandleWindowResized;
+            _posCallback = HandlePositionChanged;
             _framebufferSizeCallback = HandleFramebufferResized;
             _windowRefreshCallback = HandleRefreshRequested;
             _cursorPositionCallback = HandleCursorPositionChanged;
@@ -211,7 +228,10 @@ namespace CeresGLFW
             _charCallback = HandleCharacterInput;
             _keyCallback = HandleKeyChanged;
             _closeCallback = HandleClosed;
+            _maximizedCallback = HandleMaximizedChanged;
             
+            glfwSetWindowPosCallback(_window, _posCallback);
+            glfwSetWindowSizeCallback(_window, _sizeCallback);
             glfwSetFramebufferSizeCallback(_window, _framebufferSizeCallback);
             glfwSetWindowRefreshCallback(_window, _windowRefreshCallback);
             glfwSetWindowCloseCallback(_window, _closeCallback);
@@ -220,6 +240,7 @@ namespace CeresGLFW
             glfwSetScrollCallback(_window, _scrollCallback);
             glfwSetCharCallback(_window, _charCallback);
             glfwSetKeyCallback(_window, _keyCallback);
+            glfwSetWindowMaximizeCallback(_window, _maximizedCallback);
         }
 
         public bool ShouldClose {
@@ -227,6 +248,8 @@ namespace CeresGLFW
             set => glfwSetWindowShouldClose(Handle, value ? 1 : 0);
         }
 
+        public event Action<int, int>? SizeChanged;
+        public event Action<int, int>? PositionChanged;
         public event Action<int, int>? FramebufferResized;
         public event Action? RefreshRequested;
         public event Action<double, double>? CursorPositionChanged;
@@ -235,6 +258,7 @@ namespace CeresGLFW
         public event Action<uint>? CharacterInput;
         public event Action<Key, int, InputAction, Mod>? KeyChanged;
         public event Action? Closed;
+        public event Action<bool>? MaximizedChanged;
 
         public void SwapBuffers()
         {
@@ -368,6 +392,21 @@ namespace CeresGLFW
                 throw new InvalidOperationException("GLFW Binding Bug! Somehow the managed class was GC'd, but the glfw resource still exists.");
             }
             return window;
+        }
+
+        private static void HandleWindowResized(IntPtr windowPtr, int width, int height)
+        {
+            GetWindowFromPtr(windowPtr).SizeChanged?.Invoke(width, height);
+        }
+
+        private static void HandlePositionChanged(IntPtr windowPtr, int xpos, int ypos)
+        {
+            GetWindowFromPtr(windowPtr).PositionChanged?.Invoke(xpos, ypos);
+        }
+
+        private static void HandleMaximizedChanged(IntPtr windowPtr, int maximized)
+        {
+            GetWindowFromPtr(windowPtr).MaximizedChanged?.Invoke(maximized != 0);
         }
         
         private static void HandleFramebufferResized(IntPtr windowPtr, int width, int height)
