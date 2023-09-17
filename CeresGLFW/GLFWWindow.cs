@@ -249,6 +249,7 @@ namespace CeresGLFW
         }
 
         public event Action<int, int>? SizeChanged;
+        public event Action<int, int>? SizeChangedInScreenCoordinates;
         public event Action<int, int>? PositionChanged;
         public event Action<int, int>? FramebufferResized;
         public event Action? RefreshRequested;
@@ -321,6 +322,23 @@ namespace CeresGLFW
         {
             width = height = 0;
             glfwGetWindowSize(_window, ref width, ref height);
+        }
+
+        /// <summary>
+        /// Not part of the GLFW api, but a convenience function which always returns the window size in
+        /// screen coordinate space.
+        ///
+        /// GetSize (glfwGetWindowSize) returns screen coordinates on macOS, but not on Windows/X11 (Presumably due to
+        /// backwards compatibility?) 
+        ///
+        /// See https://github.com/glfw/glfw/issues/845
+        /// </summary>
+        public void GetSizeInScreenCoordinates(out int width, out int height)
+        {
+            GetFramebufferSize(out int framebufferX, out int framebufferY);
+            GetContentScale(out float scaleX, out float scaleY);
+            width = (int)(framebufferX / scaleX);
+            height = (int)(framebufferY / scaleY);
         }
 
         public void GetFramebufferSize(out int width, out int height)
@@ -411,7 +429,14 @@ namespace CeresGLFW
         
         private static void HandleFramebufferResized(IntPtr windowPtr, int width, int height)
         {
-            GetWindowFromPtr(windowPtr).FramebufferResized?.Invoke(width, height);
+            GLFWWindow window = GetWindowFromPtr(windowPtr);
+            
+            window.FramebufferResized?.Invoke(width, height);
+            
+            if (window.SizeChangedInScreenCoordinates != null) {
+                window.GetContentScale(out float scaleX, out float scaleY);
+                window.SizeChangedInScreenCoordinates.Invoke((int)(width / scaleX), (int)(height / scaleY));    
+            }
         }
 
         private static void HandleRefreshRequested(IntPtr windowPtr)
