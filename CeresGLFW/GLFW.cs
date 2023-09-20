@@ -62,6 +62,9 @@ namespace CeresGLFW
         [DllImport(DllName)]
         private static extern IntPtr glfwGetKeyName(int key, int scancode);
         
+        [DllImport(DllName)]
+        private static extern int glfwGetGamepadState(int jid, out GamepadState state);
+        
         private static readonly Dictionary<IntPtr, GLFWMonitor> _validMonitors = new();
         
         private delegate void MonitorFunction(IntPtr monitor, int eventValue);
@@ -174,6 +177,12 @@ namespace CeresGLFW
                 }
             }
             return buttons;
+        }
+        
+        public static bool GetGamepadState(int jid, out GamepadState state)
+        {
+            int result = glfwGetGamepadState(jid, out state);
+            return result == 1;
         }
 
         public static double GetTime()
