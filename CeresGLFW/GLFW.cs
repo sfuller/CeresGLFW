@@ -65,6 +65,9 @@ namespace CeresGLFW
         [DllImport(DllName)]
         private static extern int glfwGetGamepadState(int jid, out GamepadState state);
         
+        [DllImport(GLFW.DllName)]
+        private static extern int glfwGetError(IntPtr description);
+        
         private static readonly Dictionary<IntPtr, GLFWMonitor> _validMonitors = new();
         
         private delegate void MonitorFunction(IntPtr monitor, int eventValue);
@@ -244,6 +247,18 @@ namespace CeresGLFW
         public static string? GetKeyName(Key key, int scancode)
         {
             return Marshal.PtrToStringUTF8(glfwGetKeyName((int)key, scancode));
+        }
+
+        internal static unsafe string? GetError()
+        {
+            void* descPtr;
+            int result = glfwGetError(new IntPtr(&descPtr));
+
+            if (result == 0 || descPtr == null) {
+                return null;
+            }
+
+            return Marshal.PtrToStringUTF8(new IntPtr(descPtr));
         }
 
     }

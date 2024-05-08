@@ -212,7 +212,8 @@ namespace CeresGLFW
             
             _window = glfwCreateWindow(width, height, title, IntPtr.Zero, shareHandle);
             if (_window == IntPtr.Zero) {
-                throw new InvalidOperationException("Failed to create GLFW window");
+                string? error = GLFW.GetError();
+                throw new InvalidOperationException($"Failed to create GLFW window: {error}");
             }
 
             GCHandle handle = GCHandle.Alloc(this, GCHandleType.Weak);
