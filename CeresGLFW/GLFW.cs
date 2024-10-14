@@ -74,6 +74,8 @@ namespace CeresGLFW
         
         public static Thread? MainThread { get; private set; }
 
+        private static MonitorFunction? _setMonitorCallback;
+
         public static void Init()
         {
             if (MainThread != null) {
@@ -83,7 +85,8 @@ namespace CeresGLFW
                 throw new InvalidOperationException("Failed to initialize GLFW.");
             }
             MainThread = Thread.CurrentThread;
-            glfwSetMonitorCallback(HandleMonitorChanged);
+            _setMonitorCallback = HandleMonitorChanged;
+            glfwSetMonitorCallback(_setMonitorCallback);
         }
 
         public static void MakeContextCurrent(GLFWWindow? window)
@@ -100,7 +103,7 @@ namespace CeresGLFW
         /// <summary>
         /// Returns the <see cref="GLFWWindow"/> that the current context is associated with.
         /// Returns null if the current context is not set, or if the associated GLFW window is not managed by the
-        /// the GLFW binding.
+        /// GLFW binding.
         /// Use <see cref="IsCurrentContextSet"/> if you need to determine if any GLFW window, not just any window
         /// within the binding, is associated with the current context.
         /// </summary>s
