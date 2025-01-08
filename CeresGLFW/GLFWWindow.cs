@@ -123,6 +123,9 @@ namespace CeresGLFW
 
         [DllImport(GLFW.DllName)]
         private static extern void glfwSetClipboardString(IntPtr window, IntPtr str);
+        
+        [DllImport(GLFW.DllName)]
+        private static extern int glfwCreateWindowSurface(IntPtr instance, IntPtr window, IntPtr allocator, out ulong surface);
 
         private IntPtr _window;
 
@@ -376,6 +379,11 @@ namespace CeresGLFW
         public unsafe void SetClipboardStringRaw(void* str)
         {
             glfwSetClipboardString(_window, new IntPtr(str));
+        }
+
+        public int CreateWindowSurface(IntPtr instance, IntPtr allocator, out ulong surface)
+        {
+            return glfwCreateWindowSurface(instance, _window, allocator, out surface);
         }
 
         private void ReleaseUnmanagedResources()

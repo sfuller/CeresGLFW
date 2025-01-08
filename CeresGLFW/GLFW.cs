@@ -65,8 +65,11 @@ namespace CeresGLFW
         [DllImport(DllName)]
         private static extern int glfwGetGamepadState(int jid, out GamepadState state);
         
-        [DllImport(GLFW.DllName)]
+        [DllImport(DllName)]
         private static extern int glfwGetError(IntPtr description);
+
+        [DllImport(DllName)]
+        private static extern unsafe byte** glfwGetRequiredInstanceExtensions(out uint count);
         
         private static readonly Dictionary<IntPtr, GLFWMonitor> _validMonitors = new();
         
@@ -252,6 +255,16 @@ namespace CeresGLFW
             return Marshal.PtrToStringUTF8(glfwGetKeyName((int)key, scancode));
         }
 
+        public static unsafe string[] GetRequiredInstanceExtensions()
+        {
+            byte** result = glfwGetRequiredInstanceExtensions(out uint count);
+            string[] extensions = new string[count];
+            for (int i = 0; i < count; ++i) {
+                extensions[i] = Marshal.PtrToStringAnsi(new IntPtr(result[i])) ?? string.Empty;
+            }
+            return extensions;
+        }
+
         internal static unsafe string? GetError()
         {
             void* descPtr;
@@ -263,6 +276,6 @@ namespace CeresGLFW
 
             return Marshal.PtrToStringUTF8(new IntPtr(descPtr));
         }
-
+        
     }
 }
