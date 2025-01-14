@@ -258,6 +258,10 @@ namespace CeresGLFW
         public static unsafe string[] GetRequiredInstanceExtensions()
         {
             byte** result = glfwGetRequiredInstanceExtensions(out uint count);
+            string? error = GetError();
+            if (error != null) {
+                throw new InvalidOperationException(error);
+            }
             string[] extensions = new string[count];
             for (int i = 0; i < count; ++i) {
                 extensions[i] = Marshal.PtrToStringAnsi(new IntPtr(result[i])) ?? string.Empty;
