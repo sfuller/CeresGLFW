@@ -29,6 +29,12 @@ namespace CeresGLFW
         private static extern void glfwSwapBuffers(IntPtr window);
 
         [DllImport(GLFW.DllName)]
+        private static extern IntPtr glfwGetWindowMonitor(IntPtr window);
+        
+        [DllImport(GLFW.DllName)]
+        private static extern void glfwSetWindowMonitor(IntPtr window, IntPtr monitor, int xpos, int ypos, int width, int height, int refreshRate);
+        
+        [DllImport(GLFW.DllName)]
         private static extern void glfwSetWindowUserPointer(IntPtr window, IntPtr pointer);
 
         [DllImport(GLFW.DllName)]
@@ -64,6 +70,9 @@ namespace CeresGLFW
         [DllImport(GLFW.DllName)]
         private static extern void glfwSetInputMode(IntPtr window, int mode, int value);
 
+        [DllImport(GLFW.DllName)]
+        private static extern void glfwGetWindowPos(IntPtr window, ref int xpos, ref int ypos);
+        
         [DllImport(GLFW.DllName)]
         private static extern void glfwGetWindowSize(IntPtr window, ref int width, ref int height);
 
@@ -261,7 +270,7 @@ namespace CeresGLFW
         public event Action<int, InputAction, Mod>? MouseButtonChanged;
         public event Action<double, double>? ScrollChanged;
         public event Action<uint>? CharacterInput;
-        public event Action<Key, int, InputAction, Mod>? KeyChanged;
+        public event Action<Key, int /* scancode*/, InputAction, Mod>? KeyChanged;
         public event Action? Closed;
         public event Action<bool>? MaximizedChanged;
 
@@ -320,12 +329,21 @@ namespace CeresGLFW
         public void SetCursorMode(CursorMode mode)
         {
             glfwSetInputMode(_window, 0x00033001 /* GLFW_CURSOR */, (int)mode);
+            GLFW.ThrowIfError();
         }
 
+        public void GetPos(out int xpos, out int ypos)
+        {
+            xpos = 0;
+            ypos = 0;
+            glfwGetWindowPos(_window, ref xpos, ref ypos);
+        }
+        
         public void GetSize(out int width, out int height)
         {
             width = height = 0;
             glfwGetWindowSize(_window, ref width, ref height);
+            GLFW.ThrowIfError();
         }
 
         /// <summary>
@@ -386,6 +404,59 @@ namespace CeresGLFW
             return glfwCreateWindowSurface(instance, _window, allocator, out surface);
         }
 
+        /// <summary>
+        /// This function returns the monitor that the specified window is in full screen on.
+        /// </summary>
+        /// <returns>The monitor, or null if the window is in windowed mode.</returns>
+        public GLFWMonitor? GetMonitor()
+        {
+            string? lastError = GLFW.GetError();
+            if (lastError != null) {
+                throw new InvalidOperationException("An error already occured!" + lastError);
+            }
+            
+            IntPtr monitor = glfwGetWindowMonitor(_window);
+            if (monitor == IntPtr.Zero) {
+                string? error = GLFW.GetError();
+                if (error != null) {
+                    throw new InvalidOperationException(error);
+                }
+
+                return null;
+            }
+
+            return GLFW.MakeMonitor(monitor);
+        }
+
+        /// <summary>
+        /// This function sets the monitor that the window uses for full screen mode or, if monitor is null,
+        /// makes it windowed mode.
+        /// 
+        /// When setting a monitor, this function updates the width, height and refresh rate of the desired video mode
+        /// and switches to the video mode closest to it. The window position is ignored when setting a monitor.
+        ///
+        /// When the monitor is null, the position, width and height are used to place the window content area.
+        /// The refresh rate is ignored when no monitor is specified.
+        ///
+        /// If you only wish to update the resolution of a full screen window or the size of a windowed mode window,
+        /// see glfwSetWindowSize.
+        ///
+        /// When a window transitions from full screen to windowed mode,
+        /// this function restores any previous window settings such as whether it is decorated, floating, resizable,
+        /// has size or aspect ratio limits, etc.
+        /// </summary>
+        public void SetMonitor(GLFWMonitor? monitor, int xpos, int ypos, int width, int height, int refreshRate)
+        {
+            if (monitor != null) {
+                monitor.CheckValidity();
+            }
+            glfwSetWindowMonitor(_window, monitor?.Handle ?? IntPtr.Zero, xpos, ypos, width, height, refreshRate);
+            string? error =  GLFW.GetError();
+            if (error != null) {
+                throw new InvalidOperationException(error);
+            }
+        }
+        
         private void ReleaseUnmanagedResources()
         {
             glfwDestroyWindow(_window);

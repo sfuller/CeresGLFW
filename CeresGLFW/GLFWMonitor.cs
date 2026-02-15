@@ -20,7 +20,7 @@ namespace CeresGLFW
             Handle = IntPtr.Zero;
         }
 
-        private void CheckValidity()
+        internal void CheckValidity()
         {
             if (Handle == IntPtr.Zero) {
                 throw new ObjectDisposedException(

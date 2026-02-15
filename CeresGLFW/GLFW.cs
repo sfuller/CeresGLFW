@@ -92,6 +92,14 @@ namespace CeresGLFW
             glfwSetMonitorCallback(_setMonitorCallback);
         }
 
+        internal static void ThrowIfError()
+        {
+            string? error = GetError();
+            if (error != null) {
+                throw new InvalidOperationException(error);
+            }
+        }
+
         public static void MakeContextCurrent(GLFWWindow? window)
         {
             if (window == null) {
@@ -101,6 +109,7 @@ namespace CeresGLFW
                 glfwMakeContextCurrent(window.Handle);    
             }
             
+            ThrowIfError();
         }
 
         /// <summary>
@@ -113,10 +122,13 @@ namespace CeresGLFW
         public static GLFWWindow? GetWindowWithCurrentContext()
         {
             IntPtr currentContextHandle = glfwGetCurrentContext();
+            ThrowIfError();
+            
             if (currentContextHandle == IntPtr.Zero) {
                 return null;
             }
             IntPtr userPointer = GLFWWindow.glfwGetWindowUserPointer(currentContextHandle);
+            ThrowIfError();
             return GCHandle.FromIntPtr(userPointer).Target as GLFWWindow;
         }
 
@@ -134,21 +146,25 @@ namespace CeresGLFW
         public static void WaitEvents()
         {
             glfwWaitEvents();
+            ThrowIfError();
         }
 
         public static void WaitEventsTimeout(double timeout)
         {
             glfwWaitEventsTimeout(timeout);
+            ThrowIfError();
         }
 
         public static void PostEmptyEvent()
         {
             glfwPostEmptyEvent();
+            ThrowIfError();
         }
 
         public static T? GetProc<T>(string name) where T : class
         {
             IntPtr proc = glfwGetProcAddress(name);
+            ThrowIfError();
             if (proc == IntPtr.Zero) {
                 return null;
             }
@@ -158,12 +174,14 @@ namespace CeresGLFW
         public static void SwapInterval(int interval)
         {
             glfwSwapInterval(interval);
+            ThrowIfError();
         }
 
         public static float[] GetJoystickAxes(int jid)
         {
             int count = 0;
             IntPtr results = glfwGetJoystickAxes(jid, ref count);
+            ThrowIfError();
             float[] axes = new float[count];
             unsafe {
                 fixed (float* axesPtr = axes) {
@@ -178,6 +196,7 @@ namespace CeresGLFW
         {
             int count = 0;
             IntPtr results = glfwGetJoystickButtons(jid, ref count);
+            ThrowIfError();
             bool[] buttons = new bool[count];
             unsafe {
                 fixed (bool* axesPtr = buttons) {
@@ -191,22 +210,31 @@ namespace CeresGLFW
         public static bool GetGamepadState(int jid, out GamepadState state)
         {
             int result = glfwGetGamepadState(jid, out state);
+            ThrowIfError();
             return result == 1;
         }
 
         public static double GetTime()
         {
-            return glfwGetTime();
+            double time = glfwGetTime();
+            ThrowIfError();
+            return time;
         }
 
         public static void SetTime(double time)
         {
             glfwSetTime(time);
+            ThrowIfError();
         }
 
-        public static GLFWMonitor GetPrimaryMonitor()
+        public static GLFWMonitor? GetPrimaryMonitor()
         {
-            return MakeMonitor(glfwGetPrimaryMonitor());
+            IntPtr monitor = glfwGetPrimaryMonitor();
+            ThrowIfError();
+            if (monitor == IntPtr.Zero) {
+                return null;
+            }
+            return MakeMonitor(monitor);
         }
 
         public static GLFWMonitor[] GetMonitors()
@@ -214,6 +242,7 @@ namespace CeresGLFW
             int count = 0;
             GLFWMonitor[] monitors = new GLFWMonitor[count];
             IntPtr array = glfwGetMonitors(ref count);
+            ThrowIfError();
 
             lock (_validMonitors) {
                 unsafe {
@@ -227,7 +256,7 @@ namespace CeresGLFW
             return monitors;
         }
 
-        private static GLFWMonitor MakeMonitor(IntPtr handle)
+        internal static GLFWMonitor MakeMonitor(IntPtr handle)
         {
             lock (_validMonitors) {
                 GLFWMonitor? monitor;
@@ -252,16 +281,16 @@ namespace CeresGLFW
 
         public static string? GetKeyName(Key key, int scancode)
         {
-            return Marshal.PtrToStringUTF8(glfwGetKeyName((int)key, scancode));
+            IntPtr str = glfwGetKeyName((int)key, scancode);
+            // TODO: Some errors here should probably be ignored.
+            //ThrowIfError();
+            return Marshal.PtrToStringUTF8(str);
         }
 
         public static unsafe string[] GetRequiredInstanceExtensions()
         {
             byte** result = glfwGetRequiredInstanceExtensions(out uint count);
-            string? error = GetError();
-            if (error != null) {
-                throw new InvalidOperationException(error);
-            }
+            ThrowIfError();
             string[] extensions = new string[count];
             for (int i = 0; i < count; ++i) {
                 extensions[i] = Marshal.PtrToStringAnsi(new IntPtr(result[i])) ?? string.Empty;
