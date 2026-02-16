@@ -282,8 +282,8 @@ namespace CeresGLFW
         public static string? GetKeyName(Key key, int scancode)
         {
             IntPtr str = glfwGetKeyName((int)key, scancode);
-            // TODO: Some errors here should probably be ignored.
-            //ThrowIfError();
+            // TODO: Throw with ability to disambigate error codes. (or surface error code for "non-severe" exceptions)
+            GetError(); // Call get error to clear any error that came up.
             return Marshal.PtrToStringUTF8(str);
         }
 
